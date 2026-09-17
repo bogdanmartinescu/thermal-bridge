@@ -2,10 +2,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { orderSchema } from "@/lib/order-schema";
 import { getAvailability } from "@/lib/stock";
 import { buildOrderRef } from "@/lib/order-number";
-import { formatRON } from "@/lib/money";
 import { getPrinterBySlug } from "@/data/printers";
-
-type D1Result<T> = { results: T[] };
 
 export const runtime = "edge";
 
@@ -73,7 +70,8 @@ export async function POST(request: Request): Promise<Response> {
     0,
   );
 
-  // 5. Insert order and items inside a batch
+  // 5. Insert order and items in a batch
+  type D1PreparedStatement = ReturnType<D1Database["prepare"]>;
   const batch: D1PreparedStatement[] = [
     env.DB.prepare(
       `INSERT INTO orders(id, ref, name, phone, email, judet, localitate, adresa, cod_postal, notes, total_bani)
@@ -101,51 +99,5 @@ export async function POST(request: Request): Promise<Response> {
 
   await env.DB.batch(batch);
 
-  // 6. Send confirmation email (awaited — failure is surfaced, not swallowed)
-  const itemsHtml = order.items
-    .map((item) => {
-      const printer = getPrinterBySlug(item.slug);
-      return `<tr>
-        <td>${printer?.name ?? item.slug}</td>
-        <td style="text-align:right">${item.qty}</td>
-        <td style="text-align:right">${formatRON(item.unitPriceBani)}</td>
-        <td style="text-align:right">${formatRON(item.unitPriceBani * item.qty)}</td>
-      </tr>`;
-    })
-    .join("\n");
-
-  const emailHtml = `
-<html><body style="font-family:sans-serif;color:#1a1a1a">
-<h2>Comandă nouă — ${ref}</h2>
-<p><strong>Client:</strong> ${order.customer.name}<br>
-<strong>Telefon:</strong> ${order.customer.phone}<br>
-<strong>Email:</strong> ${order.customer.email}</p>
-<p><strong>Adresă livrare:</strong><br>
-${order.customer.adresa}<br>
-${order.customer.localitate}, ${order.customer.judet} ${order.customer.codPostal}</p>
-${order.customer.notes ? `<p><strong>Observații:</strong> ${order.customer.notes}</p>` : ""}
-<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
-<thead><tr><th>Produs</th><th>Cant.</th><th>Preț/buc.</th><th>Total</th></tr></thead>
-<tbody>${itemsHtml}</tbody>
-<tfoot><tr><td colspan="3"><strong>Total</strong></td><td style="text-align:right"><strong>${formatRON(totalBani)}</strong></td></tr></tfoot>
-</table>
-<p style="color:#666">Plată: ramburs la livrare.</p>
-</body></html>
-`;
-
-  const emailText = `Comandă nouă ${ref}\n\n${order.customer.name}\n${order.customer.phone}\n${order.customer.email}\n${order.customer.adresa}, ${order.customer.localitate}, ${order.customer.judet} ${order.customer.codPostal}\n\nTotal: ${formatRON(totalBani)}\nPlată: ramburs`;
-
-  await env.EMAIL.send({
-    to: { email: "hi@mlb.ro", name: "ThermalBridge" },
-    from: { email: "comenzi@mlb.ro", name: "ThermalBridge" },
-    replyTo: { email: order.customer.email, name: order.customer.name },
-    subject: `Comandă nouă ${ref}`,
-    html: emailHtml,
-    text: emailText,
-  });
-
   return Response.json({ ref }, { status: 201 });
 }
-
-// D1PreparedStatement is a global in the Workers runtime; type it here for the batch array
-type D1PreparedStatement = ReturnType<D1Database["prepare"]>;

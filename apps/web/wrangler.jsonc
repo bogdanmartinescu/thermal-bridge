@@ -24,13 +24,8 @@
       "migrations_dir": "./migrations"
     }
   ],
-  // Enable with: wrangler email sending enable mlb.ro
-  "send_email": [
-    {
-      "name": "EMAIL",
-      "allowed_sender_addresses": ["comenzi@mlb.ro"]
-    }
-  ],
+  // Set the API key with: wrangler secret put ORDERS_API_KEY
+  // Then use it in the desktop app as: Authorization: Bearer <key>
   "observability": {
     "enabled": true,
     "logs": {
