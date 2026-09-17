@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@theme inline {
+@theme {
   /* Ink scale — matches the desktop app's design tokens */
   --color-ink-950: #0a0d12;
   --color-ink-900: #0f1319;
@@ -28,8 +28,6 @@
 
 *, *::before, *::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 html {
@@ -38,8 +36,8 @@ html {
 }
 
 body {
-  background-color: var(--color-ink-950);
-  color: var(--color-ink-200);
+  background-color: theme(--color-ink-950);
+  color: theme(--color-ink-200);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   line-height: 1.6;
 }

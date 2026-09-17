@@ -137,20 +137,26 @@ importers:
     dependencies:
       '@opennextjs/cloudflare':
         specifier: 1.20.6
-        version: 1.20.6(next@16.3.5(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(wrangler@4.133.0(@cloudflare/workers-types@4.20260702.1)(@types/node@22.20.1))
+        version: 1.20.6(next@16.3.5(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(wrangler@4.133.0(@cloudflare/workers-types@5.20260916.1)(@types/node@22.20.1))
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
       next:
         specifier: 16.3.5
         version: 16.3.5(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: ^19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.8
+        version: 19.2.8(react@19.2.8)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20250909.0
-        version: 4.20260702.1
+        specifier: ^5.20260916.1
+        version: 5.20260916.1
       '@eslint/js':
         specifier: ^9.32.0
         version: 9.39.5
@@ -183,7 +189,7 @@ importers:
         version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.16.9)(tsx@4.23.12)(yaml@2.9.1)
       wrangler:
         specifier: ^4.133.0
-        version: 4.133.0(@cloudflare/workers-types@4.20260702.1)(@types/node@22.20.1)
+        version: 4.133.0(@cloudflare/workers-types@5.20260916.1)(@types/node@22.20.1)
 
   packages/cli:
     dependencies:
@@ -654,8 +660,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@4.20260702.1':
-    resolution: {integrity: sha512-mOhf5TUEB1m2vPrxtqoIGfz0fUC9xyxRDx5gWHy5s+OCo6dcV+g7wI1R7gYCMFohhqF/2y2xeKVwMwCJjfn/WA==}
+  '@cloudflare/workers-types@5.20260916.1':
+    resolution: {integrity: sha512-BR2oaseRZZ5q8uToQpAA/6hYNc1+jcKB5OIfK+PkZPkbS7OICVKvRS+WpKgbyTQ7yl6colb3pIHwQRgszfFd5g==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -6180,7 +6186,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260916.1':
     optional: true
 
-  '@cloudflare/workers-types@4.20260702.1': {}
+  '@cloudflare/workers-types@5.20260916.1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -6984,7 +6990,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@opennextjs/cloudflare@1.20.6(next@16.3.5(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(wrangler@4.133.0(@cloudflare/workers-types@4.20260702.1)(@types/node@22.20.1))':
+  '@opennextjs/cloudflare@1.20.6(next@16.3.5(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(wrangler@4.133.0(@cloudflare/workers-types@5.20260916.1)(@types/node@22.20.1))':
     dependencies:
       '@ast-grep/napi': 0.40.5
       '@dotenvx/dotenvx': 1.31.0
@@ -6996,7 +7002,7 @@ snapshots:
       glob: 12.0.0
       next: 16.3.5(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       ts-tqdm: 0.8.6
-      wrangler: 4.133.0(@cloudflare/workers-types@4.20260702.1)(@types/node@22.20.1)
+      wrangler: 4.133.0(@cloudflare/workers-types@5.20260916.1)(@types/node@22.20.1)
       yargs: 18.1.0
     transitivePeerDependencies:
       - encoding
@@ -10875,7 +10881,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20260916.1
       '@cloudflare/workerd-windows-64': 1.20260916.1
 
-  wrangler@4.133.0(@cloudflare/workers-types@4.20260702.1)(@types/node@22.20.1):
+  wrangler@4.133.0(@cloudflare/workers-types@5.20260916.1)(@types/node@22.20.1):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260916.1)
@@ -10886,7 +10892,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20260916.1
     optionalDependencies:
-      '@cloudflare/workers-types': 4.20260702.1
+      '@cloudflare/workers-types': 5.20260916.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - '@types/node'
