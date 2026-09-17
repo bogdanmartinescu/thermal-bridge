@@ -47,21 +47,13 @@ export default function HomePage() {
         </div>
 
         {/* ── Screenshot ── */}
-        {/* To add a real screenshot: place screenshot.png in apps/web/public/
-            and replace the placeholder div below with:
-            <img src="/screenshot.png" alt="ThermalBridge — editor de etichete"
-                 className="mx-auto mt-14 w-full max-w-5xl rounded-2xl border border-white/8 shadow-2xl" /> */}
         <div className="mx-auto mt-14 w-full max-w-5xl px-6">
-          <div className="flex h-80 w-full items-center justify-center rounded-2xl border border-white/8 bg-ink-900/60 md:h-[28rem]">
-            <div className="text-center">
-              <svg className="mx-auto mb-3 text-ink-700" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-              <p className="text-sm text-ink-600">Screenshot aplicație — în curând</p>
-            </div>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/screenshot.png"
+            alt="ThermalBridge — editor de etichete termice"
+            className="w-full rounded-2xl border border-white/8 shadow-2xl"
+          />
         </div>
       </section>
 
