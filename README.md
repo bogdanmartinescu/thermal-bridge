@@ -144,6 +144,8 @@ The `thermal-core` package contains all bitmap processing (resize, threshold, Fl
 
 → See [`docs/engineering-spec.md`](docs/engineering-spec.md) for the full protocol analysis and architecture decisions.
 
+→ See [`docs/website.md`](docs/website.md) for Vercel hosting setup and how to update the landing-page download links.
+
 ---
 
 ## Shared folder sync

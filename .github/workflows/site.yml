@@ -1,0 +1,42 @@
+name: Update site downloads
+
+on:
+  # Runs after electron-builder has finished publishing assets
+  release:
+    types: [published]
+  # Manual trigger for recovery / first-run
+  workflow_dispatch:
+
+jobs:
+  update-downloads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Fetch full history so the commit can be pushed
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Refresh download links in web/index.html
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/update-downloads.mjs
+
+      - name: Commit updated index.html (if changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet web/index.html || (
+            git add web/index.html &&
+            git commit -m "chore: update download links for $(node -e "const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));process.stdout.write('v'+p.version)")"
+          )
+
+      - name: Push to master
+        run: git push origin HEAD:master
