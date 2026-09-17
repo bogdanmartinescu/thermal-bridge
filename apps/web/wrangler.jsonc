@@ -1,0 +1,40 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "thermalbridge-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-17",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "thermalbridge-web"
+    }
+  ],
+  // Create with: wrangler d1 create thermalbridge-orders
+  // Apply schema: wrangler d1 migrations apply thermalbridge-orders --remote
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "thermalbridge-orders",
+      "database_id": "<REPLACE_WITH_YOUR_D1_DATABASE_ID>",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  // Enable with: wrangler email sending enable mlb.ro
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": ["comenzi@mlb.ro"]
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "head_sampling_rate": 1
+    }
+  }
+}

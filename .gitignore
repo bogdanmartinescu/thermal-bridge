@@ -26,3 +26,7 @@ native/printbridge/target/
 
 # Local package store
 .pnpm-store/
+
+# Next.js / OpenNext build output
+apps/web/.open-next/
+apps/web/.next/

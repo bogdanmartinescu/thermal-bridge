@@ -29,14 +29,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/update-downloads.mjs
 
-      - name: Commit updated index.html (if changed)
+      - name: Commit updated download links (if changed)
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git diff --quiet web/index.html || (
-            git add web/index.html &&
-            git commit -m "chore: update download links for $(node -e "const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));process.stdout.write('v'+p.version)")"
-          )
+          # Collect any changed artefacts
+          CHANGED=()
+          git diff --quiet web/index.html                       || CHANGED+=(web/index.html)
+          git diff --quiet apps/web/src/data/downloads.json    || CHANGED+=(apps/web/src/data/downloads.json)
+          if [ ${#CHANGED[@]} -gt 0 ]; then
+            git add "${CHANGED[@]}"
+            TAG=$(node -e "const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));process.stdout.write('v'+p.version)")
+            git commit -m "chore: update download links for ${TAG}"
+          fi
 
       - name: Push to master
         run: git push origin HEAD:master

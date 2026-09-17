@@ -1,0 +1,18 @@
+{
+  "macArm64": {
+    "url": "https://github.com/bogdanmartinescu/thermal-bridge/releases/download/v1.2.3/ThermalBridge-1.2.3-mac-arm64.dmg",
+    "version": "v1.2.3",
+    "size": "141 MB"
+  },
+  "macX64": null,
+  "winX64": {
+    "url": "https://github.com/bogdanmartinescu/thermal-bridge/releases/download/v1.2.3/ThermalBridge-1.2.3-win-x64.exe",
+    "version": "v1.2.3",
+    "size": "115 MB"
+  },
+  "linux": {
+    "url": "https://github.com/bogdanmartinescu/thermal-bridge/releases/download/v1.2.2/ThermalBridge-1.2.2-linux-x86_64.AppImage",
+    "version": "v1.2.2",
+    "size": "180 MB"
+  }
+}

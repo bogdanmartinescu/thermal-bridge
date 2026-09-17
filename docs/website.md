@@ -1,93 +1,159 @@
-# Website
+# ThermalBridge website
 
-The ThermalBridge landing page lives in `web/` and is hosted on Vercel.
+The ThermalBridge website is a Romanian-language **Next.js 16** app at `apps/web`, deployed on **Cloudflare Workers** via [@opennextjs/cloudflare](https://github.com/opennextjs/cloudflare). It serves as both the product landing page and an e-commerce store (printer catalog, cart, COD checkout).
 
-## Structure
+---
 
+## Architecture
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Hosting | Cloudflare Workers |
+| Adapter | @opennextjs/cloudflare 1.20.6 |
+| Styling | Tailwind CSS 4 (same ink/accent tokens as the desktop app) |
+| Database | Cloudflare D1 (orders + order_items) |
+| Email | Cloudflare Email Service (send_email binding) |
+| Cart | React context + localStorage (client-side) |
+
+---
+
+## First-time setup (one-time, per Cloudflare account)
+
+### 1. Create the D1 database
+
+```bash
+cd apps/web
+npx wrangler d1 create thermalbridge-orders
 ```
-web/
-  index.html        Static page — hero, features, printers, downloads, footer
-  styles.css        Hand-written CSS using the same design tokens as the desktop app
-  vercel.json       Cache headers, security headers, cleanUrls
-  assets/
-    logo.png        Copied from apps/desktop/resources/icon.png
-    banner.jpg      Copied from docs/banner.jpg  (og:image)
-    favicon.png     Same as logo.png
+
+Copy the `database_id` from the output and paste it into `apps/web/wrangler.jsonc`:
+
+```jsonc
+"d1_databases": [
+  {
+    "binding": "DB",
+    "database_name": "thermalbridge-orders",
+    "database_id": "<PASTE_YOUR_ID_HERE>",   // ← replace this
+    "migrations_dir": "./migrations"
+  }
+],
 ```
 
-No build step. Vercel serves the files as-is.
+### 2. Apply the D1 schema
 
-## Vercel setup (one-time)
+```bash
+npx wrangler d1 migrations apply thermalbridge-orders --remote
+```
 
-1. Go to [vercel.com/new](https://vercel.com/new) → **Import Git repository** → select `bogdanmartinescu/thermal-bridge`.
-2. Set **Root Directory** to `web`.
-3. Set **Framework Preset** to *Other*.
-4. Leave **Build Command** empty.
-5. Set **Output Directory** to `.` (a single dot).
-6. Click **Deploy**. Vercel ignores the pnpm monorepo at the root.
+### 3. Enable Email Sending
 
-After the first deploy, every push to `master` that touches `web/` will trigger a new Vercel build automatically.
+```bash
+npx wrangler email sending enable mlb.ro
+```
 
-Custom domain: add it under **Settings → Domains** in the Vercel project dashboard.
+This requires that you own and control `mlb.ro`. Follow the Cloudflare dashboard instructions to add the required **SPF, DKIM, and DMARC DNS records** on that domain. Without these records, emails will not send.
+
+### 4. Regenerate Cloudflare env types (after any binding change)
+
+```bash
+npx wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts
+```
+
+---
+
+## Deployment: Cloudflare Workers Builds (recommended)
+
+1. Go to **Cloudflare Dashboard → Workers & Pages → Create → Connect to Git**.
+2. Choose the `marklife-x4-desktop-app` GitHub repo.
+3. Set **Build root** to `apps/web`.
+4. Set **Build command** to `npm run build` (this runs `opennextjs-cloudflare build`).
+5. Set **Deploy command** to `npm run deploy`.
+6. Add the `DB` and `EMAIL` bindings in the Worker settings.
+
+Push to `master` triggers an automatic deploy.
+
+### CLI fallback
+
+```bash
+cd apps/web
+pnpm build      # runs next build + opennextjs-cloudflare build
+pnpm deploy     # uploads to Cloudflare
+```
+
+### Local dev
+
+```bash
+cd apps/web
+pnpm dev        # Next.js dev server on http://localhost:3000
+```
+
+> Note: `pnpm preview` (Cloudflare Workers runtime preview) requires `workerd` to be built. Run `pnpm approve-builds` in `apps/web` and select `workerd`.
+
+---
 
 ## Updating download links
 
-Download links in `web/index.html` are maintained inside a fenced block:
+`scripts/update-downloads.mjs` fetches GitHub Releases and writes `apps/web/src/data/downloads.json` (consumed by the Next.js landing page). It also updates `web/index.html` if that file still exists.
 
-```html
-<!-- downloads:start -->
-… generated cards …
-<!-- downloads:end -->
-```
-
-The script `scripts/update-downloads.mjs` fetches all GitHub releases and rewrites this block. It resolves each platform (macOS Apple Silicon, macOS Intel, Windows, Linux) **independently** to the newest release that actually contains a matching asset. This means a partial release (e.g. Linux missing from `v1.2.3`) never breaks the page — it falls back to the last release that did include Linux.
-
-### Automatic (recommended)
-
-`.github/workflows/site.yml` triggers on `release: [published]` and re-runs the script, committing `web/index.html` when it changes. Vercel picks up the commit and deploys.
-
-### Manual run
+Run manually:
 
 ```bash
-# Without a token (public repo, 60 req/h limit)
-pnpm site:downloads
-
-# With a token (higher rate limit)
 GITHUB_TOKEN=ghp_... pnpm site:downloads
 ```
 
-### Platform fallback behaviour
+Or automatically: the **`.github/workflows/site.yml`** workflow triggers on every published GitHub Release and commits the updated `downloads.json`.
 
-| Platform | Asset pattern | Current state |
-|---|---|---|
-| macOS Apple Silicon | `*-mac-arm64.dmg` | ✅ Resolved from latest release |
-| macOS Intel | `*-mac-x64.dmg` | ⬜ Never published — card shows "Coming soon" |
-| Windows | `*-win-x64.exe` | ✅ Resolved from latest release |
-| Linux | `*-linux-x86_64.AppImage` | ✅ Falls back to previous release when missing |
+---
 
-The Intel Mac build is produced by the `macos-13` matrix entry in `.github/workflows/release.yml`. Once it publishes an asset matching `*-mac-x64.dmg`, the card will appear automatically on the next `pnpm site:downloads` run.
+## Catalog and stock
 
-## Screenshot slot
+`apps/web/src/data/printers.ts` is the single source of truth for the printer catalog. Edit it to:
 
-The hero section contains a placeholder:
+- Set real selling prices (in **bani**, e.g. `129900` = 1.299,00 RON)
+- Update stock counts when new units arrive
+- Replace `/placeholder-printer.png` with real product photos placed in `apps/web/public/`
 
-```html
-<!-- To add a screenshot: replace the entire .hero-screenshot-slot div with:
-     <img src="assets/screenshot.png" alt="ThermalBridge — label editor"
-          style="width:100%;display:block;border-radius:var(--radius)"> -->
+Stock availability shown on the site is **derived** at request time:
+
+```
+available(slug) = printers[slug].stock - SUM(order_items.qty WHERE slug AND order.status != 'anulata')
 ```
 
-Add `web/assets/screenshot.png` (16:9, ≥1800px wide) and swap the div.
+This prevents overselling without requiring the catalog file to be mutated.
 
-## Local preview
+---
+
+## Legal (required before going live)
+
+`/termeni` and `/confidentialitate` are scaffolded with placeholders. Before launch:
+
+- Have a Romanian lawyer review both documents.
+- Fill in the missing sections (standard withdrawal model form, specific warranty terms, full sub-processor list).
+- Add a cookie consent banner if you add analytics.
+
+---
+
+## Environment variables
+
+| Variable | Where | Purpose |
+|---|---|---|
+| `NEXTJS_ENV` | `.dev.vars` | Local dev indicator |
+| `DB` | Wrangler binding | D1 database |
+| `EMAIL` | Wrangler binding | Email Service |
+| `ASSETS` | Wrangler binding | Static assets |
+| `WORKER_SELF_REFERENCE` | Wrangler binding | Self-service dispatch |
+
+---
+
+## Running tests
 
 ```bash
-npx serve web
+# From repo root
+pnpm test
+
+# From apps/web only
+cd apps/web && pnpm test
 ```
 
-Open http://localhost:3000. Check:
-
-- Hero CTA is labelled for your OS
-- Your platform's download card is highlighted
-- Intel Mac card is disabled with "Coming soon"
-- Mobile layout at 375px width (use browser DevTools)
+Tests cover: money formatting, order number generation, order Zod schema (including Romanian phone/postal code shapes), cart totals, and quantity clamping.

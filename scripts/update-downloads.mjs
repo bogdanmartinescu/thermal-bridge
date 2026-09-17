@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const HTML_PATH = join(root, 'web', 'index.html');
+const JSON_PATH = join(root, 'apps', 'web', 'src', 'data', 'downloads.json');
 
 const OWNER = 'bogdanmartinescu';
 const REPO  = 'thermal-bridge';
@@ -184,6 +185,41 @@ export function renderDownloads(html, downloads) {
   );
 }
 
+// ─── JSON serialization ─────────────────────────────────────────────────────
+
+/**
+ * Serialize resolved downloads to the JSON schema consumed by apps/web.
+ *
+ * @param {Record<string, Resolved | null>} downloads
+ * @returns {string} JSON string (prettified)
+ */
+export function serializeDownloads(downloads) {
+  const macArm64 = downloads['mac-arm64'];
+  const macX64   = downloads['mac-x64'];
+  const winX64   = downloads['win-x64'];
+  const linux    = downloads['linux'];
+
+  const toEntry = (resolved) =>
+    resolved === null
+      ? null
+      : {
+          url: resolved.url,
+          version: `v${resolved.version}`,
+          size: formatSize(resolved.sizeBytes),
+        };
+
+  return JSON.stringify(
+    {
+      macArm64: toEntry(macArm64),
+      macX64:   toEntry(macX64),
+      winX64:   toEntry(winX64),
+      linux:    toEntry(linux),
+    },
+    null,
+    2,
+  ) + '\n';
+}
+
 // ─── GitHub API fetch ────────────────────────────────────────────────────────
 
 /**
@@ -231,13 +267,34 @@ if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.a
     }
   }
 
-  const html = readFileSync(HTML_PATH, 'utf8');
-  const updated = renderDownloads(html, downloads);
+  // Update web/index.html (legacy — kept while the static site exists)
+  try {
+    const html = readFileSync(HTML_PATH, 'utf8');
+    const updated = renderDownloads(html, downloads);
+    if (updated === html) {
+      process.stdout.write('No changes to web/index.html.\n');
+    } else {
+      writeFileSync(HTML_PATH, updated, 'utf8');
+      process.stdout.write('Updated web/index.html.\n');
+    }
+  } catch (err) {
+    if (/** @type {any} */(err).code === 'ENOENT') {
+      process.stdout.write('web/index.html not found — skipping HTML update.\n');
+    } else {
+      throw err;
+    }
+  }
 
-  if (updated === html) {
-    process.stdout.write('No changes to web/index.html.\n');
+  // Update apps/web/src/data/downloads.json (Next.js site)
+  const json = serializeDownloads(downloads);
+  let existingJson = null;
+  try {
+    existingJson = readFileSync(JSON_PATH, 'utf8');
+  } catch { /* file may not exist yet */ }
+  if (json === existingJson) {
+    process.stdout.write('No changes to apps/web/src/data/downloads.json.\n');
   } else {
-    writeFileSync(HTML_PATH, updated, 'utf8');
-    process.stdout.write('Updated web/index.html.\n');
+    writeFileSync(JSON_PATH, json, 'utf8');
+    process.stdout.write('Updated apps/web/src/data/downloads.json.\n');
   }
 }

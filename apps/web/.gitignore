@@ -1,0 +1,5 @@
+.open-next/
+.next/
+node_modules/
+cloudflare-env.d.ts
+.dev.vars

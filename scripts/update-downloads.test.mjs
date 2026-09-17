@@ -6,7 +6,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveDownloads, formatSize, renderDownloads } from './update-downloads.mjs';
+import { resolveDownloads, formatSize, renderDownloads, serializeDownloads } from './update-downloads.mjs';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -171,5 +171,46 @@ describe('renderDownloads', () => {
     const result = renderDownloads(SAMPLE_HTML, downloads);
     assert.ok(result.startsWith('<html>'));
     assert.ok(result.endsWith('</html>'));
+  });
+});
+
+// ─── serializeDownloads ─────────────────────────────────────────────────────
+
+describe('serializeDownloads', () => {
+  it('produces valid JSON', () => {
+    const downloads = resolveDownloads(RELEASES);
+    const json = serializeDownloads(downloads);
+    assert.doesNotThrow(() => JSON.parse(json));
+  });
+
+  it('sets mac-x64 to null (never published)', () => {
+    const downloads = resolveDownloads(RELEASES);
+    const parsed = JSON.parse(serializeDownloads(downloads));
+    assert.equal(parsed.macX64, null);
+  });
+
+  it('includes v prefix in version string', () => {
+    const downloads = resolveDownloads(RELEASES);
+    const parsed = JSON.parse(serializeDownloads(downloads));
+    assert.ok(parsed.macArm64.version.startsWith('v'));
+  });
+
+  it('sets linux url to the AppImage from v1.2.2', () => {
+    const downloads = resolveDownloads(RELEASES);
+    const parsed = JSON.parse(serializeDownloads(downloads));
+    assert.ok(parsed.linux !== null);
+    assert.ok(parsed.linux.url.includes('AppImage'));
+    assert.equal(parsed.linux.version, 'v1.2.2');
+  });
+
+  it('formats size as MB string', () => {
+    const downloads = resolveDownloads(RELEASES);
+    const parsed = JSON.parse(serializeDownloads(downloads));
+    assert.match(parsed.macArm64.size, /^\d+ MB$/);
+  });
+
+  it('is idempotent — serializing twice yields same JSON', () => {
+    const downloads = resolveDownloads(RELEASES);
+    assert.equal(serializeDownloads(downloads), serializeDownloads(downloads));
   });
 });
