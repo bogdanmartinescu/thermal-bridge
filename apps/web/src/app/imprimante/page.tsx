@@ -54,8 +54,7 @@ export default function ImprimanteListPage() {
           >
             {/* Image placeholder */}
             <div className="mb-4 flex h-40 items-center justify-center rounded-xl bg-ink-700/40">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+                <img
                 src={p.images[0] ?? "/placeholder-printer.png"}
                 alt={p.name}
                 className="h-full w-full rounded-xl object-contain p-4"

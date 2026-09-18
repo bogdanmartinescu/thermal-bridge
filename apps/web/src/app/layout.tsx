@@ -1,30 +1,28 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { HtmlLang } from "@/components/HtmlLang";
+import { localeFromPathname, SITE_URL } from "@/i18n/config";
+import { landingMetadata } from "@/i18n/metadata";
 
 export const metadata: Metadata = {
-  title: "ThermalBridge — Editor de etichete termic pentru imprimante",
-  description:
-    "ThermalBridge este o aplicație desktop cross-platform pentru proiectarea, gestionarea și tipărirea etichetelor termice și inkjet. USB, BLE, TCP, CUPS — fără cloud, fără abonament.",
-  openGraph: {
-    title: "ThermalBridge",
-    description:
-      "Editor de etichete termic pentru imprimante. USB, Bluetooth, Wi-Fi sau coada OS.",
-    images: [{ url: "/banner.jpg", width: 1200, height: 400 }],
-    type: "website",
-    locale: "ro_RO",
-  },
-  twitter: { card: "summary_large_image" },
+  metadataBase: new URL(SITE_URL),
   icons: { icon: "/favicon.png" },
+  ...landingMetadata("ro"),
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const headerList = await headers();
+  const pathname = headerList.get("x-pathname") ?? "/";
+  const locale = localeFromPathname(pathname);
+
   return (
-    <html lang="ro">
+    <html lang={locale}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -38,6 +36,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <HtmlLang />
         <CartProvider>
           <Nav />
           <main>{children}</main>
