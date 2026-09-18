@@ -34,7 +34,6 @@ export default async function PrinterDetailPage({ params }: PageProps) {
       <div className="grid gap-12 lg:grid-cols-2">
         {/* Image */}
         <div className="flex h-80 items-center justify-center rounded-2xl border border-white/8 bg-ink-800/40 lg:h-auto lg:min-h-80">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={printer.images[0] ?? "/placeholder-printer.png"}
             alt={printer.name}

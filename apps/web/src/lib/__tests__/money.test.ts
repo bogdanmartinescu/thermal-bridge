@@ -14,12 +14,12 @@ describe("formatRON", () => {
 
   it("formats 129900 bani as 1299 RON", () => {
     const result = formatRON(129900);
-    expect(result).toMatch(/1[\.,]299/);
+    expect(result).toMatch(/1[.,]299/);
   });
 
   it("formats large values correctly", () => {
     const result = formatRON(500000);
-    expect(result).toMatch(/5[\.,]000/);
+    expect(result).toMatch(/5[.,]000/);
   });
 });
 

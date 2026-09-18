@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Locale } from "@/i18n/config";
+import { landingCopy } from "@/i18n/landing";
 
 export interface DownloadEntry {
   url: string;
@@ -34,12 +36,15 @@ function detectPlatform(): PlatformKey | null {
   return null;
 }
 
-const PLATFORM_LABELS: Record<PlatformKey, string> = {
-  "mac-arm64": "Descarcă pentru macOS",
-  "mac-x64": "Descarcă pentru macOS",
-  "win-x64": "Descarcă pentru Windows",
-  linux: "Descarcă pentru Linux",
-};
+function platformLabels(locale: Locale): Record<PlatformKey, string> {
+  const t = landingCopy(locale).downloads;
+  return {
+    "mac-arm64": t.ctaMac,
+    "mac-x64": t.ctaMac,
+    "win-x64": t.ctaWin,
+    linux: t.ctaLinux,
+  };
+}
 
 function DownloadCard({
   platform,
@@ -48,6 +53,8 @@ function DownloadCard({
   entry,
   highlighted,
   icon,
+  comingSoon,
+  unavailable,
 }: {
   platform: PlatformKey;
   label: string;
@@ -55,6 +62,8 @@ function DownloadCard({
   entry: DownloadEntry | null;
   highlighted: boolean;
   icon: React.ReactNode;
+  comingSoon: string;
+  unavailable: string;
 }) {
   const disabled = entry === null;
 
@@ -76,7 +85,7 @@ function DownloadCard({
       </div>
       {disabled ? (
         <span className="shrink-0 rounded-full bg-ink-700 px-2.5 py-0.5 text-xs text-ink-400">
-          În curând
+          {comingSoon}
         </span>
       ) : (
         <div className="shrink-0 text-right text-xs text-ink-400">
@@ -107,7 +116,7 @@ function DownloadCard({
 
   if (disabled) {
     return (
-      <div className={className} aria-label={`${label} — indisponibil`}>
+      <div className={className} aria-label={`${label} — ${unavailable}`}>
         {inner}
       </div>
     );
@@ -143,8 +152,16 @@ const LinuxIcon = () => (
   </svg>
 );
 
-export function OsDownloads({ downloads }: { downloads: Downloads }) {
+export function OsDownloads({
+  downloads,
+  locale,
+}: {
+  downloads: Downloads;
+  locale: Locale;
+}) {
   const [detected, setDetected] = useState<PlatformKey | null>(null);
+  const t = landingCopy(locale).downloads;
+  const labels = platformLabels(locale);
 
   useEffect(() => {
     setDetected(detectPlatform());
@@ -174,7 +191,7 @@ export function OsDownloads({ downloads }: { downloads: Downloads }) {
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                {PLATFORM_LABELS[detected]}
+                {labels[detected]}
               </a>
             );
           })()}
@@ -190,6 +207,8 @@ export function OsDownloads({ downloads }: { downloads: Downloads }) {
           entry={downloads.macArm64}
           highlighted={detected === "mac-arm64"}
           icon={<MacIcon />}
+          comingSoon={t.comingSoon}
+          unavailable={t.unavailable}
         />
         <DownloadCard
           platform="mac-x64"
@@ -198,6 +217,8 @@ export function OsDownloads({ downloads }: { downloads: Downloads }) {
           entry={downloads.macX64}
           highlighted={detected === "mac-x64"}
           icon={<MacIcon />}
+          comingSoon={t.comingSoon}
+          unavailable={t.unavailable}
         />
         <DownloadCard
           platform="win-x64"
@@ -206,6 +227,8 @@ export function OsDownloads({ downloads }: { downloads: Downloads }) {
           entry={downloads.winX64}
           highlighted={detected === "win-x64"}
           icon={<WinIcon />}
+          comingSoon={t.comingSoon}
+          unavailable={t.unavailable}
         />
         <DownloadCard
           platform="linux"
@@ -214,20 +237,22 @@ export function OsDownloads({ downloads }: { downloads: Downloads }) {
           entry={downloads.linux}
           highlighted={detected === "linux"}
           icon={<LinuxIcon />}
+          comingSoon={t.comingSoon}
+          unavailable={t.unavailable}
         />
       </div>
 
       <p className="mt-4 text-xs text-ink-500">
-        Toate versiunile și checksum-urile sunt disponibile pe{" "}
+        {t.footnote.split(t.githubReleases)[0]}
         <a
           href="https://github.com/bogdanmartinescu/thermal-bridge/releases"
           target="_blank"
           rel="noopener noreferrer"
           className="underline hover:text-ink-300"
         >
-          pagina GitHub Releases
+          {t.githubReleases}
         </a>
-        . Build-uri nesemnate — code-signing este în curs de implementare.
+        {t.footnote.split(t.githubReleases)[1]}
       </p>
     </>
   );

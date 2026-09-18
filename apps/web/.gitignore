@@ -1,5 +1,6 @@
 .open-next/
 .next/
+.wrangler/
 node_modules/
-cloudflare-env.d.ts
 .dev.vars
+tsconfig.tsbuildinfo
