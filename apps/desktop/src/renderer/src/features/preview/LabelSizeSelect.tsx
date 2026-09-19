@@ -5,6 +5,7 @@ import {
   type LabelSize,
   type LabelSizeGroup,
 } from '@thermalbridge/printer-profiles';
+import { Proportions } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -19,8 +20,9 @@ import { cn } from '@/lib/utils.js';
 interface LabelSizeSelectProps {
   widthMm: number;
   heightMm: number;
+  dpi?: number;
   onChange: (size: { widthMm: number; heightMm: number }) => void;
-  variant?: 'stack' | 'inline';
+  variant?: 'stack' | 'inline' | 'chrome';
   maxWidthMm?: number;
   sizes?: readonly LabelSize[];
   className?: string;
@@ -44,6 +46,11 @@ export function LabelSizeSelect(props: LabelSizeSelectProps) {
   );
   const grouped = sizes.some((size) => size.group !== undefined);
   const inline = props.variant === 'inline';
+  const chrome = props.variant === 'chrome';
+  const current = sizes.find(
+    (size) => size.widthMm === props.widthMm && size.heightMm === props.heightMm,
+  );
+  const title = current?.displayName ?? `${props.widthMm} × ${props.heightMm} mm`;
 
   return (
     <Select
@@ -58,11 +65,27 @@ export function LabelSizeSelect(props: LabelSizeSelectProps) {
       <SelectTrigger
         size={inline ? 'sm' : 'default'}
         className={cn(
-          inline ? 'h-8 border-white/5 bg-ink-800' : 'w-full',
+          inline && 'h-8 border-border bg-card',
+          chrome &&
+            'tb-chrome-control h-11 w-full min-w-0 rounded-[10px] border-border bg-[var(--surface-2)] px-3.5 shadow-none',
+          !inline && !chrome && 'w-full',
           props.className,
         )}
       >
-        <SelectValue />
+        {chrome ? (
+          <span className="flex min-w-0 flex-1 items-center gap-2.5">
+            <Proportions className="size-4 shrink-0 text-muted-foreground" />
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate text-[13px] font-medium">{title}</span>
+              <span className="block truncate text-[11px] text-muted-foreground">
+                {props.widthMm} × {props.heightMm} mm
+                {props.dpi !== undefined ? ` · ${props.dpi} DPI` : ''}
+              </span>
+            </span>
+          </span>
+        ) : (
+          <SelectValue />
+        )}
       </SelectTrigger>
       <SelectContent position="popper">
         {grouped

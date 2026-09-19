@@ -23,17 +23,20 @@ export function SourceFilmstrip(props: SourceFilmstripProps) {
   }
 
   return (
-    <div className="pointer-events-auto flex h-full w-36 flex-col overflow-hidden rounded-xl border border-white/10 bg-ink-950/95 shadow-panel backdrop-blur-sm">
-      <div className="shrink-0 border-b border-white/5 px-2.5 py-2">
-        <p className="truncate text-ui-xs font-medium text-ink-100" title={header.name}>
+    <div className="pointer-events-auto flex h-full w-40 flex-col overflow-hidden rounded-xl border border-[color:var(--border-soft)] bg-[var(--surface-0)] shadow-dock">
+      <div className="shrink-0 border-b border-[color:var(--border-soft)] px-3 py-2.5">
+        <p
+          className="truncate text-[12px] font-semibold leading-4 text-[color:var(--text-primary)]"
+          title={header.name}
+        >
           {header.name}
         </p>
-        <p className="mt-0.5 text-ui-2xs text-ink-500">
+        <p className="mt-1 text-[11px] leading-4 text-[color:var(--text-secondary)]">
           {t('sourcePreviewPages', { n: header.pageCount })}
         </p>
       </div>
       <div
-        className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-2 py-2"
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2.5"
         role="listbox"
         aria-label={t('sourcePreviewTitle')}
       >
@@ -48,17 +51,19 @@ export function SourceFilmstrip(props: SourceFilmstripProps) {
               aria-selected={selected}
               title={t('sourcePreviewPage', { n: item.pageNumber })}
               className={cn(
-                'relative aspect-[3/4] w-full shrink-0 overflow-hidden rounded-md bg-white ring-1 ring-white/10 hover:ring-primary/60',
-                selected && 'ring-2 ring-primary',
+                'relative aspect-[2/3] w-full shrink-0 overflow-hidden rounded-[6px] bg-[var(--surface-2)] transition-all hover-fade',
+                selected
+                  ? 'outline outline-2 outline-primary'
+                  : 'outline outline-1 outline-[color:var(--border-soft)] hover:outline-[color:var(--border-strong)]',
               )}
               onClick={() => props.onSelectPage(item.pageId)}
             >
               <img
                 src={item.previewUrl}
                 alt={t('sourcePreviewPage', { n: item.pageNumber })}
-                className="size-full object-cover"
+                className="size-full bg-white object-contain"
               />
-              <span className="absolute inset-x-0 bottom-0 bg-black/55 py-0.5 text-center text-[9px] leading-none text-white">
+              <span className="absolute bottom-1.5 left-1.5 rounded-md bg-[var(--surface-0)] px-1.5 py-0.5 text-[11px] font-medium leading-none text-[color:var(--text-secondary)] shadow-sm">
                 {item.pageNumber}
               </span>
             </button>

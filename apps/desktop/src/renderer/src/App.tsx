@@ -22,6 +22,7 @@ import {
   type Rotation,
 } from '@thermalbridge/thermal-core';
 import type {
+  Appearance,
   AppSettings,
   LabelTemplateMeta,
   MediaFileMeta,
@@ -45,8 +46,10 @@ import { buildMenuState } from '@/features/commands/menu-state.js';
 import { ModalProvider, useModalState } from '@/features/commands/modal-context.js';
 import { useCommands } from '@/features/commands/use-commands.js';
 import { useMenuSync } from '@/features/commands/use-menu-sync.js';
+import { AppChrome } from '@/features/layout/AppChrome.js';
 import { AppSidebar } from '@/features/layout/AppSidebar.js';
 import { WorkspaceRightPane } from '@/features/layout/WorkspaceRightPane.js';
+import { EditorElementsPanel } from '@/features/editor/EditorElementsPanel.js';
 import { AboutAppDialog } from '@/features/about/AboutAppDialog.js';
 import { SaveTemplateDialog } from '@/features/library/SaveTemplateDialog.js';
 import { CalibrationPane } from '@/features/calibration/CalibrationPane.js';
@@ -187,17 +190,20 @@ export function App() {
     }
   };
 
+  const appearance = settings?.appearance ?? 'light';
+
   useEffect(() => {
-    document.documentElement.classList.add('dark');
+    document.documentElement.classList.toggle('dark', appearance === 'dark');
+    document.documentElement.dataset.theme = appearance;
     document.documentElement.lang = locale;
-  }, [locale]);
+  }, [appearance, locale]);
 
   return (
     <TooltipProvider>
       <ModalProvider>
         <I18nProvider locale={locale} setLocale={setLocale}>
           <AppShell settings={settings} setSettings={setSettings} onSettingsLocale={setLocaleState} />
-          <Toaster />
+          <Toaster theme={appearance} />
         </I18nProvider>
       </ModalProvider>
     </TooltipProvider>
@@ -214,7 +220,8 @@ function AppShell(props: {
   const previewRef = useRef<PreviewCommandsHandle>(null);
   const [screen, setScreen] = useState<Screen>('print');
   const [showGrid, setShowGrid] = useState(false);
-  const [showRuler, setShowRuler] = useState(false);
+  const [showRuler, setShowRuler] = useState(true);
+  const appearance = props.settings?.appearance ?? 'light';
   const [printers, setPrinters] = useState<PrinterInfo[]>([]);
   const [usbDevices, setUsbDevices] = useState<PrinterInfo[]>([]);
   const [sppPorts, setSppPorts] = useState<PrinterInfo[]>([]);
@@ -1374,6 +1381,14 @@ function AppShell(props: {
     toggleGrid: () => setShowGrid((current) => !current),
     toggleRuler: () => setShowRuler((current) => !current),
     setLocale,
+    setAppearance: (next: Appearance) => {
+      document.documentElement.classList.toggle('dark', next === 'dark');
+      document.documentElement.dataset.theme = next;
+      if (!window.thermalBridge) {
+        return;
+      }
+      void window.thermalBridge.settings.update({ appearance: next }).then(props.setSettings);
+    },
     openAbout: () => setAboutOpen(true),
   };
   const actionsRef = useRef(commandActions);
@@ -1392,11 +1407,13 @@ function AppShell(props: {
       buildMenuState({
         screen,
         locale,
+        appearance,
         hasSelection: Boolean(selectedId),
         hasSource: selectedPage?.hasSource === true,
         canPrint: !printDisabled,
         isEnhanced: selectedSource?.enhanced === true,
         showGrid,
+        showRuler,
         fitMode: draft.fitMode,
         pageCount: pages.length,
         modalOpen,
@@ -1419,6 +1436,7 @@ function AppShell(props: {
       draft.printerId,
       draft.profileId,
       draft.widthMm,
+      appearance,
       locale,
       modalOpen,
       pages.length,
@@ -1429,23 +1447,59 @@ function AppShell(props: {
       selectedSource?.enhanced,
       screen,
       showGrid,
+      showRuler,
       templateItems,
     ],
   );
   useMenuSync(menuState);
 
   return (
-    <div className="flex h-full bg-ink-900">
-      <AppSidebar screen={screen} onScreen={setScreen} />
+    <div className="flex h-full min-w-0 flex-col overflow-hidden bg-background">
+      <AppChrome
+        source={source}
+        widthMm={draft.widthMm}
+        heightMm={draft.heightMm}
+        dpi={dpi}
+        printerId={draft.printerId}
+        printerName={selectedPrinter?.name ?? null}
+        printerModel={profile.displayName}
+        printers={catalog.map((printer) => ({ id: printer.id, name: printer.name }))}
+        linkState={linkState}
+        onOpenFile={onOpenDialog}
+        onLabelSize={(size) => updateDraft(size)}
+        onSelectPrinter={(id) => {
+          const printer = catalog.find((item) => item.id === id);
+          if (printer) {
+            void bindPrinter(printer);
+          }
+        }}
+        onConnectPrinter={openConnectPrinter}
+        onSaveTemplate={() => {
+          setTemplateName(`${Math.round(draft.widthMm)}×${Math.round(draft.heightMm)}`);
+          setSaveTemplateOpen(true);
+        }}
+        labelSizes={labelSizesForProfile(profile)}
+      />
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+      <AppSidebar
+        screen={screen}
+        onScreen={setScreen}
+        onHelp={() => setAboutOpen(true)}
+        appearance={appearance}
+        onAppearance={(next) => run('view.appearance', next)}
+      />
+      {screen === 'print' ? (
+        <EditorElementsPanel selectedId={selectedId} showGrid={showGrid} run={run} />
+      ) : null}
 
       <main
         className={cn(
           'min-w-0 flex-1',
-          screen === 'print' ? 'overflow-hidden p-0' : 'overflow-auto p-4',
+          screen === 'print' ? 'h-full min-h-0 overflow-hidden p-0' : 'overflow-auto p-4',
         )}
       >
         {screen === 'print' ? (
-          <div className="flex h-full min-h-0">
+          <div className="flex h-full min-h-0 min-w-0">
             <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
               <PreviewPane
               ref={previewRef}
@@ -1763,6 +1817,7 @@ function AppShell(props: {
           />
         ) : null}
       </main>
+      </div>
       <AboutAppDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <SaveTemplateDialog
         open={saveTemplateOpen}

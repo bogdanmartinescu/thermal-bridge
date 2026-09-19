@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type Ref } from 'react';
 import { ArrowDown, ArrowUp, Copy, Plus, Trash2 } from 'lucide-react';
 import { LabelCanvas } from '@/features/editor/LabelCanvas.js';
 import type { LabelPage } from '@/features/editor/label-pages.js';
@@ -19,7 +19,7 @@ interface EditorPageStackProps {
   pageHeight: number;
   measured: boolean;
   showGrid: boolean;
-  showRuler: boolean | undefined;
+  selectedCanvasRef?: Ref<HTMLDivElement | null>;
   onSelectPage: (id: string) => void;
   onSelect: (id: string | null) => void;
   onContentBox: (box: ContentBox) => void;
@@ -53,11 +53,7 @@ export function EditorPageStack(props: EditorPageStackProps) {
             className="flex flex-col items-center"
           >
             <div className="group/page relative">
-              <div className="mb-2 flex w-full items-center justify-between gap-2">
-                <p className="text-ui-xs font-semibold text-ink-200">
-                  {t('editorPageNumber', { n: index + 1 })}
-                </p>
-                <div className="flex gap-1 opacity-0 transition-opacity group-hover/page:opacity-100 group-focus-within/page:opacity-100">
+              <div className="absolute -top-9 right-0 z-10 flex gap-1 opacity-0 transition-opacity group-hover/page:opacity-100 group-focus-within/page:opacity-100">
                   <button
                     type="button"
                     disabled={!canMoveUp}
@@ -93,14 +89,14 @@ export function EditorPageStack(props: EditorPageStackProps) {
                   >
                     <Trash2 className="size-3.5" />
                   </button>
-                </div>
               </div>
               <div
+                ref={selected ? props.selectedCanvasRef : undefined}
                 className={cn(
-                  'relative block overflow-hidden rounded-sm bg-white shadow-[0_18px_50px_rgba(0,0,0,0.45)] transition-all hover-fade',
+                  'relative block overflow-hidden rounded-[6px] bg-white canvas-shadow transition-all hover-fade',
                   selected
-                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-ink-900'
-                    : 'ring-1 ring-black/10 hover:ring-white/20',
+                    ? 'outline outline-2 outline-[#22d3ee]'
+                    : 'outline outline-1 outline-black/10 hover:outline-black/20',
                 )}
                 style={
                   props.measured
@@ -131,7 +127,7 @@ export function EditorPageStack(props: EditorPageStackProps) {
                       stageWidth={props.pageWidth}
                       stageHeight={props.pageHeight}
                       showGrid={props.showGrid}
-                      showRuler={props.showRuler}
+                      showRuler={false}
                       onSelect={(id) => {
                         props.onSelectPage(page.id);
                         props.onSelect(id);

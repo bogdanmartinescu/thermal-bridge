@@ -5,19 +5,15 @@ import {
   useRef,
   useState,
   type DragEvent,
-  type ReactElement,
 } from 'react';
 import type { LabelSize } from '@thermalbridge/printer-profiles';
 import type { MenuActionId } from '@thermalbridge/shared';
-import { Minus, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.js';
 import type { PreviewCommandsHandle } from '@/features/commands/command-handlers.js';
-import { EditorDock } from '@/features/editor/EditorDock.js';
 import { EditorIconPicker } from '@/features/editor/EditorIconPicker.js';
 import { EditorPageStack } from '@/features/editor/EditorPageStack.js';
 import { EditorPalette } from '@/features/editor/EditorPalette.js';
-import { EditorTopChrome } from '@/features/editor/EditorTopChrome.js';
 import { PhotoCleanupBanner } from '@/features/preview/PhotoCleanupBanner.js';
 import { SourceFilmstrip } from '@/features/preview/SourceFilmstrip.js';
 import { sourceFilmstripItems, type SourceFilmstripInput } from '@/features/preview/source-filmstrip.js';
@@ -30,12 +26,16 @@ import { useI18n } from '@/i18n/I18nProvider.js';
 import { cn } from '@/lib/utils.js';
 import type { SourceDocument } from '@/state/types.js';
 import { contentOverflowMm, type ContentBox } from './content-placement.js';
+import { previewRulerChromePx } from './preview-rulers.js';
+import { PreviewRulers } from './PreviewRulers.js';
+import { PreviewViewToggles } from './PreviewViewToggles.js';
 import {
   PREVIEW_ZOOM_DEFAULT,
   PREVIEW_ZOOM_MAX,
   PREVIEW_ZOOM_MIN,
   clampPreviewZoom,
   nextWellSize,
+  PREVIEW_PAGE_CHROME_PX,
   previewDocumentSize,
   previewLabelSize,
   previewVisibleWell,
@@ -93,26 +93,14 @@ export const PreviewPane = forwardRef<PreviewCommandsHandle, PreviewPaneProps>(f
 ) {
   const { t } = useI18n();
   const wellRef = useRef<HTMLDivElement>(null);
+  const selectedCanvasRef = useRef<HTMLDivElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const dockRef = useRef<HTMLDivElement>(null);
   const [wellSize, setWellSize] = useState({ width: 0, height: 0 });
+  const [rulerOrigin, setRulerOrigin] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(PREVIEW_ZOOM_DEFAULT);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [dockPosition, setDockPosition] = useState(() => {
-    const stored = localStorage.getItem('editorDockPosition');
-    if (stored) {
-      try {
-        return JSON.parse(stored) as { x: number; y: number };
-      } catch {
-        return { x: 12, y: 12 };
-      }
-    }
-    return { x: 12, y: 12 };
-  });
-  const [isDraggingDock, setIsDraggingDock] = useState(false);
-  const dragStartPos = useRef({ x: 0, y: 0, dockX: 0, dockY: 0 });
   const selectedPage =
     props.pages.find((page) => page.id === props.selectedPageId) ?? props.pages[0] ?? null;
   const contentBox = selectedPage?.contentBox ?? null;
@@ -153,9 +141,10 @@ export const PreviewPane = forwardRef<PreviewCommandsHandle, PreviewPaneProps>(f
         pageWidth: labelSize.width,
         pageHeight: labelSize.height,
         pageCount: props.pages.length,
-        gutter: 88,
+        gutter: 0,
         padding: 64 + overflowPad,
         footer: 0,
+        pageChrome: PREVIEW_PAGE_CHROME_PX,
       })
     : null;
   useEffect(() => {
@@ -189,6 +178,47 @@ export const PreviewPane = forwardRef<PreviewCommandsHandle, PreviewPaneProps>(f
   }, []);
 
   useEffect(() => {
+    if (props.showRuler !== true) {
+      return;
+    }
+    const well = wellRef.current;
+    const page = selectedCanvasRef.current;
+    if (!well || !page) {
+      return;
+    }
+    const sync = (): void => {
+      const wellBox = well.getBoundingClientRect();
+      const pageBox = page.getBoundingClientRect();
+      setRulerOrigin((current) => {
+        const next = {
+          x: Math.round(pageBox.left - wellBox.left),
+          y: Math.round(pageBox.top - wellBox.top),
+        };
+        if (current.x === next.x && current.y === next.y) {
+          return current;
+        }
+        return next;
+      });
+    };
+    sync();
+    well.addEventListener('scroll', sync, { passive: true });
+    const observer = new ResizeObserver(sync);
+    observer.observe(well);
+    observer.observe(page);
+    return () => {
+      well.removeEventListener('scroll', sync);
+      observer.disconnect();
+    };
+  }, [
+    labelSize.height,
+    labelSize.width,
+    measured,
+    props.pages.length,
+    props.selectedPageId,
+    props.showRuler,
+  ]);
+
+  useEffect(() => {
     const well = wellRef.current;
     if (!well) {
       return;
@@ -219,78 +249,18 @@ export const PreviewPane = forwardRef<PreviewCommandsHandle, PreviewPaneProps>(f
     }
   };
 
-  const handleDockMouseDown = (event: React.MouseEvent<HTMLDivElement>): void => {
-    if (event.button !== 0) return;
-    const target = event.target as HTMLElement;
-    if (target.closest('button') || target.closest('[role="button"]')) return;
-    
-    event.preventDefault();
-    setIsDraggingDock(true);
-    dragStartPos.current = {
-      x: event.clientX,
-      y: event.clientY,
-      dockX: dockPosition.x,
-      dockY: dockPosition.y,
-    };
-  };
-
-  useEffect(() => {
-    if (!isDraggingDock) return;
-
-    const handleMouseMove = (event: MouseEvent): void => {
-      const deltaX = event.clientX - dragStartPos.current.x;
-      const deltaY = event.clientY - dragStartPos.current.y;
-      const newX = Math.max(0, dragStartPos.current.dockX + deltaX);
-      const newY = Math.max(0, dragStartPos.current.dockY + deltaY);
-      setDockPosition({ x: newX, y: newY });
-    };
-
-    const handleMouseUp = (): void => {
-      setIsDraggingDock(false);
-      localStorage.setItem('editorDockPosition', JSON.stringify(dockPosition));
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDraggingDock, dockPosition]);
-
   useEditorShortcuts({
     enabled: props.shortcutsEnabled,
     run: props.run,
   });
 
-  const dock = (orientation: 'vertical' | 'horizontal'): ReactElement => {
-    return (
-      <EditorDock
-        orientation={orientation}
-        selectedId={props.selectedId}
-        showGrid={props.showGrid}
-        run={props.run}
-      />
-    );
-  };
+  const pageIndex = props.pages.findIndex((page) => page.id === (selectedPage?.id ?? props.selectedPageId));
+  const pageNumber = pageIndex >= 0 ? pageIndex + 1 : 1;
+  const canPrevPage = pageIndex > 0;
+  const canNextPage = pageIndex >= 0 && pageIndex < props.pages.length - 1;
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-ink-900">
-      <EditorTopChrome
-        source={props.source}
-        widthMm={props.widthMm}
-        heightMm={props.heightMm}
-        printerName={props.printerName}
-        linkState={props.linkState}
-        onOpenFile={props.onOpenDialog}
-        onPageChange={props.onPageChange}
-        showPagePicker={props.showSourcePagePicker !== false}
-        onLabelSize={props.onLabelSize}
-        onConnectPrinter={props.onConnectPrinter}
-        onSaveTemplate={props.onSaveTemplate}
-        {...(props.labelSizes !== undefined ? { labelSizes: props.labelSizes } : {})}
-      />
+    <div className="flex h-full min-h-0 flex-col bg-[var(--canvas-bg)]">
       {props.showCleanupBanner && props.onRevertCleanup && props.onDismissCleanup ? (
         <PhotoCleanupBanner onRevert={props.onRevertCleanup} onDismiss={props.onDismissCleanup} />
       ) : null}
@@ -322,16 +292,35 @@ export const PreviewPane = forwardRef<PreviewCommandsHandle, PreviewPaneProps>(f
             reader.readAsDataURL(file);
           }}
         />
-        <div className="relative flex min-h-0 flex-1">
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <div className="relative min-h-0 flex-1">
+        <div className="flex h-full min-h-0 flex-1 flex-col">
+            <div className="relative h-full min-h-0 flex-1">
+            {props.showRuler === true && measured ? (
+              <PreviewRulers
+                widthMm={props.widthMm}
+                heightMm={props.heightMm}
+                pageWidth={labelSize.width}
+                pageHeight={labelSize.height}
+                originX={rulerOrigin.x}
+                originY={rulerOrigin.y}
+              />
+            ) : null}
             <div
               ref={wellRef}
               tabIndex={0}
               className={cn(
-                'canvas-grid absolute inset-0 overflow-auto outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                'absolute overflow-auto bg-[var(--canvas-bg)] outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 dragOver && 'ring-2 ring-primary/50',
               )}
+              style={
+                props.showRuler === true
+                  ? {
+                      top: previewRulerChromePx(),
+                      right: 0,
+                      bottom: 0,
+                      left: previewRulerChromePx(),
+                    }
+                  : { inset: 0 }
+              }
               aria-label={t('previewTitle')}
               onDragEnter={(event) => {
                 event.preventDefault();
@@ -346,14 +335,21 @@ export const PreviewPane = forwardRef<PreviewCommandsHandle, PreviewPaneProps>(f
               onDrop={onDrop}
             >
               <div
-                className={cn(
-                  'flex justify-center pt-28 lg:pt-3 lg:pl-40',
-                  filmstrip.length > 0 && 'pr-40',
-                )}
+                className={cn('canvas-grid flex', filmstrip.length > 0 && 'pr-48')}
                 style={
                   documentSize
-                    ? { minWidth: documentSize.width, minHeight: documentSize.height }
-                    : { minHeight: '100%', minWidth: '100%' }
+                    ? {
+                        minWidth: documentSize.width,
+                        minHeight: documentSize.height,
+                        alignItems: 'safe center',
+                        justifyContent: 'safe center',
+                      }
+                    : {
+                        minHeight: '100%',
+                        minWidth: '100%',
+                        alignItems: 'safe center',
+                        justifyContent: 'safe center',
+                      }
                 }
               >
                 <EditorPageStack
@@ -368,7 +364,7 @@ export const PreviewPane = forwardRef<PreviewCommandsHandle, PreviewPaneProps>(f
                   pageHeight={labelSize.height}
                   measured={measured}
                   showGrid={props.showGrid}
-                  showRuler={props.showRuler}
+                  selectedCanvasRef={selectedCanvasRef}
                   onSelectPage={props.onSelectPage}
                   onSelect={props.onSelect}
                   onContentBox={props.onContentBox}
@@ -381,25 +377,28 @@ export const PreviewPane = forwardRef<PreviewCommandsHandle, PreviewPaneProps>(f
                 />
               </div>
             </div>
-            <div className="pointer-events-none absolute inset-0 hidden lg:block">
-              <div
-                ref={dockRef}
-                className="pointer-events-auto absolute max-h-[calc(100%-1.5rem)]"
-                style={{
-                  left: `${dockPosition.x}px`,
-                  top: `${dockPosition.y}px`,
-                  cursor: isDraggingDock ? 'grabbing' : 'grab',
-                }}
-                onMouseDown={handleDockMouseDown}
-              >
-                {dock('vertical')}
-              </div>
-            </div>
-            <div className="pointer-events-none absolute inset-x-0 top-0 lg:hidden">
-              <div className="pointer-events-auto px-3 pt-3">{dock('horizontal')}</div>
+            <div
+              className={cn(
+                'pointer-events-none absolute z-20',
+                filmstrip.length > 0 ? 'right-48' : 'right-3',
+                props.showRuler === true ? 'top-11' : 'top-3',
+              )}
+            >
+              <PreviewViewToggles
+                className="pointer-events-auto"
+                showRuler={props.showRuler === true}
+                showGrid={props.showGrid}
+                onToggleRuler={() => props.run('view.toggleRuler')}
+                onToggleGrid={() => props.run('view.toggleGrid')}
+              />
             </div>
             {filmstrip.length > 0 ? (
-              <div className="pointer-events-none absolute top-3 bottom-3 right-3">
+              <div
+                className={cn(
+                  'pointer-events-none absolute right-3 bottom-3',
+                  props.showRuler === true ? 'top-11' : 'top-3',
+                )}
+              >
                 <SourceFilmstrip
                   items={filmstrip}
                   selectedPageId={selectedPage?.id ?? props.selectedPageId}
@@ -410,52 +409,91 @@ export const PreviewPane = forwardRef<PreviewCommandsHandle, PreviewPaneProps>(f
                 />
               </div>
             ) : null}
-            </div>
-            <div className="flex shrink-0 items-center justify-between gap-2 border-t border-white/5 bg-ink-900 px-3 py-1.5">
-              <p className="min-w-0 flex-1 truncate text-ui-2xs text-ink-500">
-                {t('shortcutZoom')}
-                <span className="mx-1.5">·</span>
-                {t('shortcutPalette')}
-                <span className="mx-1.5">·</span>
-                {props.widthMm} × {props.heightMm} mm · {props.dpi} DPI
-              </p>
-              <div className="flex items-center gap-1">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label={t('zoomOut')}
-                      disabled={zoom <= PREVIEW_ZOOM_MIN}
-                      onClick={() => nudgeZoom(-ZOOM_STEP)}
-                    >
-                      <Minus />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">{t('zoomOut')}</TooltipContent>
-                </Tooltip>
-                <span className="w-10 text-center font-mono text-ui-2xs tabular-nums text-ink-300">
+            <div
+              className={cn(
+                'pointer-events-none absolute bottom-3 z-10',
+                filmstrip.length > 0 ? 'right-48' : 'right-3',
+              )}
+            >
+              <div className="pointer-events-auto flex h-12 items-center justify-center gap-1 rounded-xl border border-border bg-[var(--surface-1)] px-1 shadow-dock">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  className="size-9"
+                  aria-label={t('zoomOut')}
+                  disabled={zoom <= PREVIEW_ZOOM_MIN}
+                  onClick={() => nudgeZoom(-ZOOM_STEP)}
+                >
+                  <Minus className="size-4" strokeWidth={1.75} />
+                </Button>
+                <span className="w-[72px] text-center text-[12px] font-medium tabular-nums text-foreground">
                   {zoom}%
                 </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label={t('zoomIn')}
-                      disabled={zoom >= PREVIEW_ZOOM_MAX}
-                      onClick={() => nudgeZoom(ZOOM_STEP)}
-                    >
-                      <Plus />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">{t('zoomIn')}</TooltipContent>
-                </Tooltip>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  className="size-9"
+                  aria-label={t('zoomIn')}
+                  disabled={zoom >= PREVIEW_ZOOM_MAX}
+                  onClick={() => nudgeZoom(ZOOM_STEP)}
+                >
+                  <Plus className="size-4" strokeWidth={1.75} />
+                </Button>
               </div>
             </div>
-          </div>
+            <div
+              className={cn(
+                'pointer-events-none absolute bottom-2 z-20 flex h-8 items-center gap-3.5 font-mono text-[11px] leading-4 text-muted-foreground',
+                props.showRuler === true ? 'left-12' : 'left-4',
+              )}
+            >
+              <span>
+                {props.widthMm} × {props.heightMm} mm
+              </span>
+              <span className="h-3 w-px bg-border" aria-hidden />
+              <span>{props.dpi} DPI</span>
+              <span className="h-3 w-px bg-border" aria-hidden />
+              <span className="pointer-events-auto flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={t('editorMovePageUp')}
+                  disabled={!canPrevPage}
+                  onClick={() => {
+                    const prev = props.pages[pageIndex - 1];
+                    if (prev) {
+                      props.onSelectPage(prev.id);
+                      props.onSelect(null);
+                    }
+                  }}
+                >
+                  <ChevronLeft className="size-3.5" />
+                </Button>
+                <span className="text-[12px] font-medium text-foreground">
+                  {t('editorPageOf', { n: pageNumber, total: props.pages.length })}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={t('editorMovePageDown')}
+                  disabled={!canNextPage}
+                  onClick={() => {
+                    const next = props.pages[pageIndex + 1];
+                    if (next) {
+                      props.onSelectPage(next.id);
+                      props.onSelect(null);
+                    }
+                  }}
+                >
+                  <ChevronRight className="size-3.5" />
+                </Button>
+              </span>
+            </div>
+            </div>
         </div>
       </div>
       <EditorPalette

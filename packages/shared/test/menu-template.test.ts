@@ -66,6 +66,25 @@ describe('buildMenuTemplate', () => {
     });
   });
 
+  it('checks the ruler item from state', () => {
+    const items = build({ showRuler: true });
+    expect(findActionItems(items, 'view.toggleRuler')[0]).toMatchObject({
+      type: 'checkbox',
+      checked: true,
+    });
+  });
+
+  it('marks the active appearance as radio-checked', () => {
+    const items = build({ appearance: 'dark' });
+    expect(findActionItems(items, 'view.appearance').find((item) => item.payload === 'dark')).toMatchObject({
+      type: 'radio',
+      checked: true,
+    });
+    expect(findActionItems(items, 'view.appearance').find((item) => item.payload === 'light')).toMatchObject({
+      checked: false,
+    });
+  });
+
   it('localizes labels for Romanian', () => {
     const items = build({ locale: 'ro' }, 'win32');
     expect(menuLabels(items)).toContain('Fișier');

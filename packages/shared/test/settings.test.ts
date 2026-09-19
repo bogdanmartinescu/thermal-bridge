@@ -11,6 +11,7 @@ describe('DEFAULT_APP_SETTINGS', () => {
       displayName: 'AWB 100 × 150 mm',
     });
     expect(parsed.locale).toBe('ro');
+    expect(parsed.appearance).toBe('light');
     expect(parsed.sidebarCollapsed).toBe(false);
     expect(parsed.syncFolderPath).toBeUndefined();
   });
@@ -28,21 +29,21 @@ describe('DEFAULT_APP_SETTINGS', () => {
     expect(parsed.syncFolderPath).toBeUndefined();
   });
 
-  it('defaults sidebarCollapsed when the field is missing', () => {
-    expect(
-      AppSettingsSchema.parse({
-        schemaVersion: 1,
-        locale: 'ro',
-        bindings: [],
-        defaultLabelSize: DEFAULT_APP_SETTINGS.defaultLabelSize,
-        defaultMediaMode: 'gap',
-        defaultGapHeightMm: 2,
-        defaultGapOffsetMm: 0,
-        defaultCopies: 1,
-        defaultDither: 'threshold',
-        defaultThreshold: 128,
-      }).sidebarCollapsed,
-    ).toBe(false);
+  it('defaults sidebarCollapsed and appearance when the fields are missing', () => {
+    const parsed = AppSettingsSchema.parse({
+      schemaVersion: 1,
+      locale: 'ro',
+      bindings: [],
+      defaultLabelSize: DEFAULT_APP_SETTINGS.defaultLabelSize,
+      defaultMediaMode: 'gap',
+      defaultGapHeightMm: 2,
+      defaultGapOffsetMm: 0,
+      defaultCopies: 1,
+      defaultDither: 'threshold',
+      defaultThreshold: 128,
+    });
+    expect(parsed.sidebarCollapsed).toBe(false);
+    expect(parsed.appearance).toBe('light');
   });
 });
 

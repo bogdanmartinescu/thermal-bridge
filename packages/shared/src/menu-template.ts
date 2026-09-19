@@ -8,7 +8,7 @@ import {
   type MenuState,
   type Screen,
 } from './menu-schemas.js';
-import type { Locale } from './settings.js';
+import { APPEARANCES, type Locale } from './settings.js';
 
 export type MenuPlatform = 'darwin' | 'win32' | 'linux';
 
@@ -310,6 +310,14 @@ function viewMenu(state: MenuState, locale: Locale, isDev: boolean): MenuItemSpe
       enabled: !state.modalOpen,
     },
   ];
+  const appearances: MenuItemSpec[] = APPEARANCES.map((appearance) => ({
+    type: 'radio' as const,
+    label: menuMessage(appearance === 'light' ? 'appearanceLight' : 'appearanceDark', locale),
+    action: 'view.appearance' as const,
+    payload: appearance,
+    checked: state.appearance === appearance,
+    enabled: !state.modalOpen,
+  }));
   const items: MenuItemSpec[] = [
     ...screens,
     { type: 'separator' },
@@ -321,9 +329,15 @@ function viewMenu(state: MenuState, locale: Locale, isDev: boolean): MenuItemSpe
       type: 'checkbox',
       checked: state.showGrid,
     },
+    {
+      ...actionItem('view.toggleRuler', locale, { enabled: !state.modalOpen }),
+      type: 'checkbox',
+      checked: state.showRuler,
+    },
     { type: 'separator' },
     actionItem('view.commandPalette', locale, { enabled: !state.modalOpen }),
     { label: menuLabel('view.language', locale), submenu: languages },
+    { label: menuLabel('view.appearance', locale), submenu: appearances },
   ];
   if (isDev) {
     items.push({ type: 'separator' }, { role: 'reload' }, { role: 'toggleDevTools' });

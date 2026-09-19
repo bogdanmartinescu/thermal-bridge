@@ -51,9 +51,12 @@ export function previewLabelSize(options: {
       ? { width: wellWidth, height: wellWidth / labelAspect }
       : { width: wellHeight * labelAspect, height: wellHeight };
   const scale = clampPreviewZoom(options.zoomPercent) / 100;
+  if (scale <= 0) {
+    return { width: 0, height: 0 };
+  }
   return {
-    width: fit.width * scale,
-    height: fit.height * scale,
+    width: Math.max(1, Math.round(fit.width * scale)),
+    height: Math.max(1, Math.round(fit.height * scale)),
   };
 }
 
@@ -82,6 +85,9 @@ export function previewStageSize(options: {
   };
 }
 
+/** Add-page control under each canvas. */
+export const PREVIEW_PAGE_CHROME_PX = 56;
+
 export function previewDocumentSize(options: {
   wellWidth: number;
   wellHeight: number;
@@ -91,11 +97,13 @@ export function previewDocumentSize(options: {
   gutter: number;
   padding: number;
   footer: number;
+  pageChrome?: number;
 }): { width: number; height: number } {
   const count = Math.max(1, options.pageCount);
+  const pageChrome = options.pageChrome ?? 0;
   const stackHeight =
     options.padding * 2 +
-    count * options.pageHeight +
+    count * (options.pageHeight + pageChrome) +
     (count - 1) * options.gutter +
     options.footer;
   return {

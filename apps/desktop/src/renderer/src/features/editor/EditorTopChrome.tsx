@@ -1,5 +1,6 @@
 import type { LabelSize } from '@thermalbridge/printer-profiles';
 import { FileUp, LayoutTemplate } from 'lucide-react';
+import { Switch } from '@/components/ui/switch.js';
 import { LabelSizeSelect } from '@/features/preview/LabelSizeSelect.js';
 import type { LinkState } from '@/features/printers/connection-status.js';
 import { useI18n } from '@/i18n/I18nProvider.js';
@@ -19,6 +20,10 @@ interface EditorTopChromeProps {
   heightMm: number;
   printerName: string | null;
   linkState: LinkState;
+  showRuler: boolean;
+  showGrid: boolean;
+  onToggleRuler: () => void;
+  onToggleGrid: () => void;
   onOpenFile: () => void;
   onPageChange: (page: number) => void;
   showPagePicker?: boolean;
@@ -81,6 +86,27 @@ export function EditorTopChrome(props: EditorTopChromeProps) {
         <LayoutTemplate className="size-4 shrink-0 text-ink-400" />
         <span className="min-w-0 truncate">{t('templatesSave')}</span>
       </button>
+
+      <div className="flex shrink-0 items-center gap-3 px-1">
+        <label className="flex items-center gap-1.5 text-ui-xs text-ink-300">
+          <Switch
+            size="sm"
+            checked={props.showRuler}
+            onCheckedChange={props.onToggleRuler}
+            aria-label={t('previewRuler')}
+          />
+          {t('previewRuler')}
+        </label>
+        <label className="flex items-center gap-1.5 text-ui-xs text-ink-300">
+          <Switch
+            size="sm"
+            checked={props.showGrid}
+            onCheckedChange={props.onToggleGrid}
+            aria-label={t('previewGuides')}
+          />
+          {t('previewGuides')}
+        </label>
+      </div>
 
       <button
         type="button"

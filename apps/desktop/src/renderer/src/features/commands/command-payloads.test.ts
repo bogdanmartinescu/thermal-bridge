@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { asFitMode, asLabelSize, asLocale, asScreen, asString } from './command-payloads.js';
+import { asAppearance, asFitMode, asLabelSize, asLocale, asScreen, asString } from './command-payloads.js';
 
 describe('command payloads', () => {
   it('accepts known ids and rejects unknowns', () => {
@@ -9,6 +9,9 @@ describe('command payloads', () => {
     expect(asScreen('nope')).toBeNull();
     expect(asLocale('ro')).toBe('ro');
     expect(asLocale('de')).toBeNull();
+    expect(asAppearance('light')).toBe('light');
+    expect(asAppearance('dark')).toBe('dark');
+    expect(asAppearance('system')).toBeNull();
     expect(asFitMode('fill')).toBe('fill');
     expect(asFitMode('cover')).toBeNull();
     expect(asLabelSize({ widthMm: 40, heightMm: 30 })).toEqual({ widthMm: 40, heightMm: 30 });

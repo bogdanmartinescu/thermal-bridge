@@ -10,7 +10,7 @@ import {
 } from '@thermalbridge/printer-profiles';
 import type { FitMode, Rotation } from '@thermalbridge/thermal-core';
 import type { PrinterInfo } from '@thermalbridge/shared';
-import { HelpCircle, RotateCcw, RotateCw, Sparkles, Undo2 } from 'lucide-react';
+import { HelpCircle, RotateCcw, RotateCw, Sparkles, Undo2, Printer, FileEdit, Layers, Image as ImageIcon, Sliders, Gauge } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button.js';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.js';
@@ -109,16 +109,13 @@ export function PrintPane(props: PrintPaneProps) {
   return (
     <div
       className={cn(
-        'flex h-full min-h-0 flex-col overflow-hidden bg-ink-900 py-3',
+        'flex h-full min-h-0 flex-col overflow-hidden bg-transparent',
         props.className,
       )}
     >
-      <div className="px-4 pb-3">
-        <h2 className="text-ui-md font-semibold tracking-tight">{t('printTitle')}</h2>
-        <p className="mt-0.5 text-ui-2xs text-ink-500">{languageBits.join(' · ')}</p>
-      </div>
-      <div className="min-h-0 flex-1 space-y-5 overflow-auto px-4">
-        <Section title={t('printSectionPrinter')}>
+      <div className="min-h-0 flex-1 space-y-2.5 overflow-auto px-3.5 py-3.5">
+        <Section title={t('printSectionPrinter')} icon={<Printer className="size-[18px]" strokeWidth={1.75} />}>
+          <p className="font-mono text-[11px] leading-4 text-muted-foreground">{languageBits.join(' · ')}</p>
           <Field
             label={t('printer')}
             extra={
@@ -194,7 +191,7 @@ export function PrintPane(props: PrintPaneProps) {
           </Field>
         </Section>
 
-        <Section title={t('printSectionMedia')}>
+        <Section title={t('printSectionMedia')} icon={<Layers className="size-[18px]" strokeWidth={1.75} />}>
           {isD210 ? (
             <D210PrintFields draft={props.draft} profile={profile} onChange={props.onChange} />
           ) : (
@@ -257,7 +254,7 @@ export function PrintPane(props: PrintPaneProps) {
         </Section>
 
         {/* ── Image section ─────────────────────────────────────────────────── */}
-        <Section title={t('printSectionImage')}>
+        <Section title={t('printSectionImage')} icon={<ImageIcon className="size-[18px]" strokeWidth={1.75} />}>
           <Field label={t('fit')}>
             <Select
               value={props.fitMode}
@@ -277,28 +274,42 @@ export function PrintPane(props: PrintPaneProps) {
 
           {profile.transforms.rotation ? (
             <Field label={`${t('rotateLabel')} (${props.rotation}°)`}>
-              <div className="flex items-center gap-1">
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   type="button"
                   size="xs"
                   variant="outline"
-                  className="flex-1 border-white/5"
+                  className="h-9 border-border"
                   aria-label="Rotate left 90°"
                   onClick={() => props.onRotation(rotateCcw(props.rotation))}
                 >
-                  <RotateCcw className="mr-1 h-3 w-3" />
+                  <RotateCcw className="mr-1 h-3.5 w-3.5" strokeWidth={1.75} />
                   −90°
                 </Button>
                 <Button
                   type="button"
                   size="xs"
                   variant="outline"
-                  className="flex-1 border-white/5"
+                  className={cn(
+                    'h-9 border-border',
+                    props.rotation === 0 &&
+                      'border-[color:var(--tb-accent-border)] bg-[color:var(--tb-accent-soft)] text-foreground',
+                  )}
+                  aria-label="Reset rotation"
+                  onClick={() => props.onRotation(0)}
+                >
+                  0°
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="outline"
+                  className="h-9 border-border"
                   aria-label="Rotate right 90°"
                   onClick={() => props.onRotation(rotateCw(props.rotation))}
                 >
                   +90°
-                  <RotateCw className="ml-1 h-3 w-3" />
+                  <RotateCw className="ml-1 h-3.5 w-3.5" strokeWidth={1.75} />
                 </Button>
               </div>
             </Field>
@@ -357,7 +368,7 @@ export function PrintPane(props: PrintPaneProps) {
         </Section>
 
         {isD210 || isOsDocument ? null : (
-        <Section title={t('printSectionQuality')}>
+        <Section title={t('printSectionQuality')} icon={<Sliders className="size-[18px]" strokeWidth={1.75} />}>
           <Field
             label={`${t('density')} (${props.draft.density})`}
             extra={
@@ -381,7 +392,11 @@ export function PrintPane(props: PrintPaneProps) {
                   type="button"
                   size="xs"
                   variant={props.draft.density === value ? 'default' : 'outline'}
-                  className="flex-1 border-white/5"
+                  className={cn(
+                    'h-9 flex-1 border-border',
+                    props.draft.density === value &&
+                      'border-transparent bg-primary text-primary-foreground hover:bg-primary',
+                  )}
                   onClick={() => props.onChange({ density: value })}
                 >
                   {t(key)}
@@ -403,7 +418,7 @@ export function PrintPane(props: PrintPaneProps) {
               value={String(props.draft.speed)}
               onValueChange={(value) => props.onChange({ speed: Number(value) })}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full font-mono">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -434,7 +449,7 @@ export function PrintPane(props: PrintPaneProps) {
         </Section>
         )}
 
-        <Section title={t('printSectionOutput')}>
+        <Section title={t('printSectionOutput')} icon={<Gauge className="size-[18px]" strokeWidth={1.75} />}>
           <Field label={t('copies')}>
             <Input
               type="number"
@@ -466,7 +481,7 @@ export function PrintPane(props: PrintPaneProps) {
           ) : null}
         </Section>
         {isD210 ? (
-          <Section title={t('printSectionAdvanced')}>
+          <Section title={t('printSectionAdvanced')} icon={<FileEdit className="size-[18px]" strokeWidth={1.75} />}>
             {profile.transforms.mirror ? (
               <div className="grid grid-cols-2 gap-3">
                 <ToggleRow
@@ -493,18 +508,21 @@ export function PrintPane(props: PrintPaneProps) {
         ) : null}
       </div>
       {props.status ? (
-        <div className="mt-auto flex shrink-0 flex-col items-stretch border-t border-white/5 px-4 pt-3">
-          <p className="text-ui-xs text-ink-400">{props.status}</p>
+        <div className="flex shrink-0 flex-col items-stretch px-3.5 pb-2">
+          <p className="text-[11px] text-muted-foreground">{props.status}</p>
         </div>
       ) : null}
     </div>
   );
 }
 
-function Section(props: { title: string; children: ReactNode }) {
+function Section(props: { title: string; icon?: ReactNode; children: ReactNode }) {
   return (
-    <section className="space-y-3.5">
-      <h3 className="text-ui-2xs font-semibold uppercase tracking-wider text-ink-400">{props.title}</h3>
+    <section className="tb-section-card space-y-3">
+      <h3 className="flex items-center gap-2 text-[13px] font-semibold leading-[18px] text-foreground">
+        {props.icon ? <span className="text-muted-foreground">{props.icon}</span> : null}
+        {props.title}
+      </h3>
       {props.children}
     </section>
   );
@@ -512,7 +530,7 @@ function Section(props: { title: string; children: ReactNode }) {
 
 function ToggleRow(props: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
-    <label className="flex items-center justify-between gap-2 rounded-md border border-white/5 bg-ink-800/60 px-2.5 py-2 text-ui-sm">
+    <label className="flex items-center justify-between gap-2 rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-[13px]">
       <span>{props.label}</span>
       <Switch checked={props.checked} onCheckedChange={props.onChange} />
     </label>

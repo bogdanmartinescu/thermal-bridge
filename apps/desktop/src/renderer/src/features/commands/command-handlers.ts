@@ -1,6 +1,6 @@
 import { MENU_ACTION_IDS, type MenuActionId } from '@thermalbridge/shared';
-import type { Locale, MenuFitMode, Screen } from '@thermalbridge/shared';
-import { asFitMode, asLabelSize, asLocale, asScreen, asString } from './command-payloads.js';
+import type { Appearance, Locale, MenuFitMode, Screen } from '@thermalbridge/shared';
+import { asAppearance, asFitMode, asLabelSize, asLocale, asScreen, asString } from './command-payloads.js';
 
 export type CommandHandlers = Record<MenuActionId, (payload?: unknown) => void>;
 
@@ -48,6 +48,7 @@ export interface AppCommandActions {
   toggleGrid(): void;
   toggleRuler(): void;
   setLocale(locale: Locale): void;
+  setAppearance(appearance: Appearance): void;
   openAbout(): void;
 }
 
@@ -135,6 +136,12 @@ export function createCommandHandlers(options: {
       const locale = asLocale(payload);
       if (locale) {
         act().setLocale(locale);
+      }
+    },
+    'view.appearance': (payload) => {
+      const appearance = asAppearance(payload);
+      if (appearance) {
+        act().setAppearance(appearance);
       }
     },
     'help.about': () => act().openAbout(),

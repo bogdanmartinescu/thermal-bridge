@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Arrow, Ellipse, Group, Image as KonvaImage, Layer, Line, Path, Rect, Stage, Text, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import type { ContentBox } from '../preview/content-placement.js';
+import { previewGridLines } from '../preview/preview-rulers.js';
 import { loadHtmlImage, renderBarcodeCanvas, renderQrCanvas } from './codes.js';
 import { resolveFieldText } from './field-value.js';
 import { getPrintIcon } from './icon-catalog.js';
@@ -26,7 +27,6 @@ interface LabelCanvasProps {
 }
 
 const IMAGE_ID = 'awb-image';
-const GRID_MM = 5;
 
 function mmToStage(mm: number, labelMm: number, stagePx: number): number {
   return (mm / labelMm) * stagePx;
@@ -512,15 +512,13 @@ export function LabelCanvas(props: LabelCanvasProps) {
     return null;
   }
 
-  const gridLines: Array<{ points: number[] }> = [];
+  const gridLines: Array<{ points: number[]; major: boolean }> = [];
   if (props.showGrid) {
-    for (let mm = GRID_MM; mm < props.widthMm; mm += GRID_MM) {
-      const x = mmToStage(mm, props.widthMm, props.stageWidth);
-      gridLines.push({ points: [x, 0, x, props.stageHeight] });
+    for (const line of previewGridLines(props.widthMm, props.stageWidth)) {
+      gridLines.push({ points: [line.posPx, 0, line.posPx, props.stageHeight], major: line.major });
     }
-    for (let mm = GRID_MM; mm < props.heightMm; mm += GRID_MM) {
-      const y = mmToStage(mm, props.heightMm, props.stageHeight);
-      gridLines.push({ points: [0, y, props.stageWidth, y] });
+    for (const line of previewGridLines(props.heightMm, props.stageHeight)) {
+      gridLines.push({ points: [0, line.posPx, props.stageWidth, line.posPx], major: line.major });
     }
   }
 
@@ -586,7 +584,13 @@ export function LabelCanvas(props: LabelCanvasProps) {
       <Layer>
         <Rect width={props.stageWidth} height={props.stageHeight} fill="#ffffff" listening={false} />
         {gridLines.map((line, index) => (
-          <Line key={index} points={line.points} stroke="#e5e5e5" strokeWidth={1} listening={false} />
+          <Line
+            key={index}
+            points={line.points}
+            stroke={line.major ? '#c5cdd8' : '#e5e5e5'}
+            strokeWidth={1}
+            listening={false}
+          />
         ))}
         {props.showRuler &&
           rulerMarks.map((mark, index) =>

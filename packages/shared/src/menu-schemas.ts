@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { MenuActionIdSchema } from './commands.js';
-import { LOCALES } from './settings.js';
+import { APPEARANCES, LOCALES } from './settings.js';
 
 export const SCREENS = [
   'print',
@@ -25,11 +25,13 @@ export const LabelSizeStateSchema = z.object({
 export const MenuStateSchema = z.object({
   screen: z.enum(SCREENS),
   locale: z.enum(LOCALES),
+  appearance: z.enum(APPEARANCES),
   hasSelection: z.boolean(),
   hasSource: z.boolean(),
   canPrint: z.boolean(),
   isEnhanced: z.boolean(),
   showGrid: z.boolean(),
+  showRuler: z.boolean(),
   fitMode: z.enum(FIT_MODES),
   pageCount: z.number().int().positive(),
   modalOpen: z.boolean(),
@@ -57,11 +59,13 @@ export type MenuCommand = z.infer<typeof MenuCommandSchema>;
 export const DEFAULT_MENU_STATE: MenuState = {
   screen: 'print',
   locale: 'ro',
+  appearance: 'light',
   hasSelection: false,
   hasSource: false,
   canPrint: false,
   isEnhanced: false,
   showGrid: false,
+  showRuler: true,
   fitMode: 'fit',
   pageCount: 1,
   modalOpen: false,

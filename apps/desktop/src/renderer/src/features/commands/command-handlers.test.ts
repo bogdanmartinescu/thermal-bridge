@@ -43,6 +43,7 @@ function stubActions(): AppCommandActions {
     toggleGrid: vi.fn(),
     toggleRuler: vi.fn(),
     setLocale: vi.fn(),
+    setAppearance: vi.fn(),
     openAbout: vi.fn(),
   };
 }
@@ -77,6 +78,7 @@ describe('createCommandHandlers', () => {
     }
     handlers['view.screen']('library');
     handlers['view.language']('en');
+    handlers['view.appearance']('dark');
     handlers['label.fitMode']('stretch');
     handlers['label.size']({ widthMm: 40, heightMm: 30 });
     handlers['print.selectPrinter']('cups:x');
@@ -85,6 +87,7 @@ describe('createCommandHandlers', () => {
     vi.runAllTimers();
     expect(actions.setScreen).toHaveBeenCalledWith('library');
     expect(actions.setLocale).toHaveBeenCalledWith('en');
+    expect(actions.setAppearance).toHaveBeenCalledWith('dark');
     expect(actions.setFitMode).toHaveBeenCalledWith('stretch');
     expect(actions.setLabelSize).toHaveBeenCalledWith({ widthMm: 40, heightMm: 30 });
     expect(actions.selectPrinter).toHaveBeenCalledWith('cups:x');

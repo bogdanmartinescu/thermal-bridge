@@ -21,36 +21,32 @@ export function WorkspaceRightPane(props: WorkspaceRightPaneProps) {
   }, [props.hasInspector]);
 
   return (
-    <aside className="flex w-[24rem] shrink-0 flex-col border-l border-white/5 bg-ink-950/40">
+    <aside className="flex w-[360px] shrink-0 flex-col overflow-hidden border-l border-[color:var(--border-soft)] bg-[var(--surface-0)]">
       <Tabs value={tab} onValueChange={setTab} className="flex h-full min-h-0 gap-0">
-        <div className="shrink-0 border-b border-white/5 px-3 py-2">
-          <TabsList variant="line" className="w-full">
-            <TabsTrigger value="inspector" className="flex-1">
-              {t('inspectorTab')}
-            </TabsTrigger>
-            <TabsTrigger value="print" className="flex-1">
-              {t('printTab')}
-            </TabsTrigger>
+        <div className="relative flex h-[52px] shrink-0 items-stretch border-b border-[color:var(--border-soft)]">
+          <TabsList variant="line" className="h-full w-full gap-0 overflow-visible bg-transparent p-0">
+            <RightPaneTab value="inspector">{t('inspectorTab')}</RightPaneTab>
+            <RightPaneTab value="print">{t('printTab')}</RightPaneTab>
           </TabsList>
         </div>
-        <TabsContent value="inspector" className="min-h-0 flex-1 overflow-auto p-3">
+        <TabsContent value="inspector" className="min-h-0 flex-1 overflow-auto p-3.5">
           {props.hasInspector ? (
             props.inspector
           ) : (
-            <p className="text-ui-xs text-ink-500">{t('inspectorEmpty')}</p>
+            <p className="text-[12px] text-muted-foreground">{t('inspectorEmpty')}</p>
           )}
         </TabsContent>
-        <TabsContent value="print" className="min-h-0 flex-1 overflow-hidden flex flex-col">
+        <TabsContent value="print" className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="min-h-0 flex-1 overflow-hidden">{props.print}</div>
           {props.onPrint ? (
-            <div className="shrink-0 border-t border-white/5 p-3">
+            <div className="shrink-0 border-t border-[color:var(--border-soft)] bg-surface-0 px-3.5 py-3">
               <button
                 type="button"
                 disabled={props.printDisabled}
                 onClick={props.onPrint}
-                className="flex w-full h-12 items-center justify-center gap-2.5 rounded-lg bg-primary text-ui font-medium text-on-accent shadow-lg hover:bg-accent-600 hover-fade disabled:opacity-50 disabled:cursor-not-allowed"
+                className="tb-btn-print"
               >
-                <Printer className="size-5" />
+                <Printer className="size-5" strokeWidth={1.75} />
                 <span>{props.busy ? t('printing') : t('print')}</span>
               </button>
             </div>
@@ -58,5 +54,20 @@ export function WorkspaceRightPane(props: WorkspaceRightPaneProps) {
         </TabsContent>
       </Tabs>
     </aside>
+  );
+}
+
+function RightPaneTab(props: { value: string; children: ReactNode }) {
+  return (
+    <TabsTrigger
+      value={props.value}
+      className="h-full flex-1 rounded-none px-4 text-[13px] font-semibold shadow-none after:hidden data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-transparent"
+    >
+      {props.children}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-4 -bottom-px h-[3px] rounded-t-full bg-primary opacity-0 [[data-state=active]_&]:opacity-100"
+      />
+    </TabsTrigger>
   );
 }

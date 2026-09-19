@@ -7,6 +7,7 @@ import {
   clampPreviewZoom,
   nextWellSize,
   previewLabelSize,
+  PREVIEW_PAGE_CHROME_PX,
   previewDocumentSize,
   previewStageSize,
   previewVisibleWell,
@@ -88,7 +89,19 @@ describe('previewLabelSize', () => {
       zoomPercent: 100,
     });
     expect(size.height).toBe(400);
-    expect(size.width).toBeCloseTo(400 * (100 / 150));
+    expect(size.width).toBe(Math.round(400 * (100 / 150)));
+  });
+
+  it('keeps Konva and CSS on integer pixels so rulers stay aligned', () => {
+    const size = previewLabelSize({
+      wellWidth: 503,
+      wellHeight: 401,
+      widthMm: 100,
+      heightMm: 150,
+      zoomPercent: 100,
+    });
+    expect(Number.isInteger(size.width)).toBe(true);
+    expect(Number.isInteger(size.height)).toBe(true);
   });
 
   it('returns an empty size until the well is measured', () => {
@@ -177,5 +190,21 @@ describe('previewDocumentSize', () => {
         footer: 40,
       }),
     ).toEqual({ width: 400, height: 752 });
+  });
+
+  it('reserves add-page chrome so rulers are not clipped', () => {
+    expect(
+      previewDocumentSize({
+        wellWidth: 400,
+        wellHeight: 400,
+        pageWidth: 200,
+        pageHeight: 300,
+        pageCount: 1,
+        gutter: 0,
+        padding: 64,
+        footer: 0,
+        pageChrome: PREVIEW_PAGE_CHROME_PX,
+      }),
+    ).toEqual({ width: 400, height: 484 });
   });
 });

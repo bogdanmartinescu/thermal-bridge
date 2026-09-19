@@ -3,6 +3,9 @@ import { z } from 'zod';
 export const LOCALES = ['en', 'ro'] as const;
 export type Locale = (typeof LOCALES)[number];
 
+export const APPEARANCES = ['light', 'dark'] as const;
+export type Appearance = (typeof APPEARANCES)[number];
+
 export const PrinterBindingSchema = z.object({
   printerId: z.string().min(1),
   profileId: z.string().min(1),
@@ -43,6 +46,7 @@ export const AppSettingsSchema = z.object({
   schemaVersion: z.literal(1),
   lastPrinterId: z.string().optional(),
   locale: z.enum(['en', 'ro']).default('ro'),
+  appearance: z.enum(APPEARANCES).default('light'),
   bindings: z.array(PrinterBindingSchema),
   defaultLabelSize: LabelSizeSchema,
   defaultMediaMode: z.enum(['continuous', 'gap', 'black-mark']),
@@ -70,6 +74,7 @@ export const SETTINGS_SCHEMA_VERSION = 1 as const;
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   schemaVersion: 1,
   locale: 'ro',
+  appearance: 'light',
   bindings: [],
   defaultLabelSize: {
     widthMm: 100,

@@ -1,7 +1,9 @@
 import {
+  APPEARANCES,
   FIT_MODES,
   LOCALES,
   SCREENS,
+  type Appearance,
   type Locale,
   type MenuFitMode,
   type Screen,
@@ -20,6 +22,12 @@ export function asScreen(payload: unknown): Screen | null {
 export function asLocale(payload: unknown): Locale | null {
   return typeof payload === 'string' && (LOCALES as readonly string[]).includes(payload)
     ? (payload as Locale)
+    : null;
+}
+
+export function asAppearance(payload: unknown): Appearance | null {
+  return typeof payload === 'string' && (APPEARANCES as readonly string[]).includes(payload)
+    ? (payload as Appearance)
     : null;
 }
 
